@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>单词复习钟 · Vocab Review Clock</title>
-<meta name="description" content="A silent spaced-repetition reminder for vocabulary, following the Ebbinghaus forgetting curve: 5 min, 30 min, 12 h (or tonight), 1, 2, 4, 7 and 15 days. 按艾宾浩斯遗忘曲线静音提醒复习单词。">
+<meta name="description" content="A silent spaced-repetition reminder for vocabulary, following the Ebbinghaus forgetting curve (5 min, 30 min, 12 h or tonight, 1, 2, 4, 7, 15 days) or your own custom plan. 按艾宾浩斯遗忘曲线静音提醒复习单词，可自定义复习方案。">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='34' r='24' fill='%231E6B59'/%3E%3Cpath d='M32 20v15l10 6' stroke='%23fff' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='34' r='24' fill='none' stroke='%23F5C542' stroke-width='4' stroke-dasharray='6 9'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -59,7 +59,7 @@ header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-be
 .lang:hover{border-color:var(--muted)}
 
 .strip{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;overflow-x:auto}
-.strip ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(8,minmax(70px,1fr));min-width:580px}
+.strip ol{list-style:none;margin:0;padding:0;display:grid}
 .strip li{position:relative;padding-top:18px;font-size:12.5px;color:var(--muted);padding-right:6px}
 .strip li::before{content:"";position:absolute;top:4px;left:0;width:9px;height:9px;border-radius:50%;background:var(--accent)}
 .strip li::after{content:"";position:absolute;top:8px;left:12px;right:4px;height:1px;background:var(--line)}
@@ -100,6 +100,20 @@ textarea{resize:vertical;min-height:72px}
 .switch input{margin-top:4px;accent-color:var(--accent);width:16px;height:16px;flex:none}
 .switch span{font-weight:400;font-size:13.5px}
 .switch em{display:block;font-style:normal;color:var(--muted);font-size:12px}
+.seg{display:flex;gap:4px;padding:4px;background:var(--sunk);border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+.seg-opt{flex:1;margin:0;cursor:pointer;position:relative}
+.seg-opt input{position:absolute;opacity:0;pointer-events:none}
+.seg-opt span{display:block;text-align:center;padding:6px 8px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted)}
+.seg-opt input:checked+span{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.seg-opt input:focus-visible+span{outline:2px solid var(--accent);outline-offset:1px}
+.plan-rows{list-style:none;margin:10px 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.plan-row{display:grid;grid-template-columns:3.2em 4.6em 1fr auto;gap:6px;align-items:center}
+.plan-row .idx{font-size:12px;color:var(--muted);white-space:nowrap}
+.plan-row input[type=number],.plan-row select{width:100%;min-width:0;background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:6px 7px;font:inherit;font-size:14px;color:inherit}
+.plan-row .x{padding:4px 8px}
+.plan-row .eve{grid-column:2 / -1;display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted);margin:0 0 2px;font-weight:400;cursor:pointer}
+.plan-row .eve input{accent-color:var(--accent);margin:0}
+.chip.plan b{color:var(--accent)}
 .subhead{font-size:13px;font-weight:700;margin:4px 0 6px;padding-top:12px;border-top:1px solid var(--line)}
 
 .list{display:flex;flex-direction:column;gap:14px}
@@ -116,7 +130,7 @@ textarea{resize:vertical;min-height:72px}
 .pill{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
 .pill.due{background:var(--due);color:var(--due-ink)}
 .pill.done{background:var(--accent);color:var(--accent-ink)}
-.nodes{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.nodes{list-style:none;margin:0;padding:0;display:grid;gap:8px 4px}
 .nodes li{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--muted);text-align:center;line-height:1.2;min-width:0}
 .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center}
 .nodes li.done .dot{background:var(--accent);border-color:var(--accent)}
@@ -162,6 +176,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
     </div>
     <div class="chips">
       <span class="chip"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 6h2l3-3v10l-3-3H3z"/><path d="M11 6l4 4M15 6l-4 4"/></svg><span data-i18n-html="chipSilent"></span></span>
+      <span class="chip plan" id="planChip"></span>
       <span class="chip" id="storeChip"></span>
       <button class="chip lang" type="button" id="langBtn" aria-label="Switch language / 切换语言"></button>
     </div>
@@ -194,13 +209,30 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
         <button class="btn primary wide" type="submit" data-i18n="start"></button>
       </form>
 
-      <div class="card">
-        <h2 data-i18n="settings"></h2>
-        <div class="field">
+      <div class="card" id="planCard">
+        <h2 data-i18n="planTitle"></h2>
+        <div class="seg" role="radiogroup" data-i18n-aria="planTitle">
+          <label class="seg-opt"><input type="radio" name="planMode" id="planRec" value="rec"><span data-i18n="planRec"></span></label>
+          <label class="seg-opt"><input type="radio" name="planMode" id="planCustom" value="custom"><span data-i18n="planCustom"></span></label>
+        </div>
+        <p class="hint" id="planRecNote" data-i18n="planRecNote"></p>
+        <div id="planEditor" hidden>
+          <ol class="plan-rows" id="planRows"></ol>
+          <div class="row">
+            <button class="btn small" type="button" id="planAdd" data-i18n="planAdd"></button>
+            <button class="btn ghost small" type="button" id="planReset" data-i18n="planReset"></button>
+          </div>
+          <p class="hint" data-i18n="planHint"></p>
+        </div>
+        <div class="field" style="margin-top:14px">
           <label for="bedtime" data-i18n="bedLabel"></label>
           <input type="time" id="bedtime" value="22:00">
           <small data-i18n="bedHint"></small>
         </div>
+      </div>
+
+      <div class="card">
+        <h2 data-i18n="settings"></h2>
         <label class="switch" for="notifyToggle">
           <input type="checkbox" id="notifyToggle">
           <span><span data-i18n="notify"></span><em id="notifyNote" data-i18n="notifyNote"></em></span>
@@ -250,19 +282,24 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
     zh: {
       htmlLang:"zh-CN", langBtn:"EN", docTitle:"单词复习钟",
       title:"单词复习钟",
-      tagline:"按艾宾浩斯遗忘曲线的 8 个节点提醒你复习 · 只弹窗，不响铃",
+      tagline:"按艾宾浩斯遗忘曲线提醒你复习（推荐 8 个节点，可自定义）· 只弹窗，不响铃",
       chipSilent:"<b>静音</b>提醒", chipLocal:"<b>保存</b>在此浏览器", chipNoStore:"<b>无法保存</b>（浏览器禁用了存储）",
       stripAria:"复习节点", round:"第 {n} 轮", bedStrip:"或当晚 {t} 前",
-      stages:["5 分钟后","30 分钟后","12 小时后 / 当晚","1 天后","2 天后","4 天后","7 天后","15 天后"],
-      stagesStrip:["5 分钟","30 分钟","12 小时","1 天","2 天","4 天","7 天","15 天"],
-      stagesShort:["5分","30分","12时","1天","2天","4天","7天","15天"],
+      unitLong:{m:"分钟",h:"小时",d:"天"}, unitShort:{m:"分",h:"时",d:"天"},
+      stageLong:"{v} {u}后", stageEve:" / 当晚",
+      planChipRec:"<b>推荐</b>方案", planChipCustom:"<b>自定义</b>方案 · {n} 次",
+      planTitle:"复习方案", planRec:"推荐（8 次）", planCustom:"自定义",
+      planRecNote:"按艾宾浩斯遗忘曲线：5 分钟、30 分钟、12 小时（或当晚）、1、2、4、7、15 天后各复习一次。",
+      planAdd:"+ 加一次", planReset:"恢复成推荐方案", planIdx:"第 {n} 次", planEve:"不晚于当晚截止时间",
+      planRemove:"删除第 {n} 次", planMax:"最多 {n} 次",
+      planHint:"所有时间都从背完那一刻算起，改完会按从早到晚排序。只影响之后新建的组，正在复习的组不变。",
       dueBar:"<strong>{n} 组单词到复习时间了</strong> · {names}", openReminder:"打开提醒", sep:"、",
       newSet:"新背一组单词", nameLabel:"这组叫什么", namePh:"例如：托福 List 3（1–50）",
       startLabel:"背完的时间", startHint:"所有复习时间都从这一刻算起。刚背完就保持默认。",
       wordsLabel:"单词（可选）", wordsPh:"粘贴本组单词，提醒弹窗里可以直接展开复习",
-      previewHead:"从这个时间算起，8 次复习分别在：", previewPick:"选一个时间来预览复习节点", start:"开始计时",
+      previewHead:"从这个时间算起，{n} 次复习分别在：", previewPick:"选一个时间来预览复习节点", start:"开始计时",
       settings:"设置", bedLabel:"“当晚”截止时间",
-      bedHint:"第 3 轮取「12 小时后」和「当晚这个时间」中更早的那个；只影响之后新建的组。",
+      bedHint:"勾了「不晚于当晚」的那一次（推荐方案里是第 3 次），取「间隔到期」和「当晚这个时间」中更早的那个。",
       notify:"同时发静音系统通知", notifyNote:"页面在后台时也能看到横幅（无声音）",
       notifyUnsupported:"当前浏览器不支持系统通知，会只用页面弹窗提醒",
       notifyDenied:"系统通知没有获得许可，会只用页面弹窗提醒",
@@ -271,9 +308,9 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
       imported:"已导入 {n} 组", importFail:"这个文件不是有效的备份", exported:"备份已下载",
       listHead:"正在复习", countActive:"{n} 组进行中", countDone:" · {n} 组已完成",
       emptyTitle:"还没有要复习的单词", emptyBody:"在左边填上刚背完的这一组，点「开始计时」，5 分钟后就会弹出第一次提醒。",
-      finished:"已完成 8 轮的组（{n}）",
-      studiedAt:"背完于 {t} · 已复习 {d}/8", pillDone:"完成", pillDue:"到点了", pillWait:"第 {n} 轮待复习",
-      allDone:"全部 8 轮已完成 · 最后一次 {t}", mastered:"已掌握",
+      finished:"已完成全部复习的组（{n}）",
+      studiedAt:"背完于 {t} · 已复习 {d}/{n}", pillDone:"完成", pillDue:"到点了", pillWait:"第 {n} 轮待复习",
+      allDone:"全部 {n} 轮已完成 · 最后一次 {t}", mastered:"已掌握",
       dueNow:"<b>第 {n} 轮现在该复习</b> · 计划 {t}", late:"（已过 {r}）", snoozing:" · 稍后提醒中",
       upcoming:"下一轮：<b>第 {n} 轮 · <span class=\"num\">{t}</span></b>（还有 {r}）",
       reviewed:"已复习", early:"提前复习完了", viewWords:"查看单词（{n} 行）",
@@ -281,7 +318,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
       tipDone:"已复习 {t}", tipPlan:"计划 {t}",
       kicker:"复习提醒", titleOne:"该复习「{name}」了", titleMany:"有 {n} 组该复习了",
       mMeta:"第 {n} 轮 · {label} · 计划 {t}", mWords:"本组单词", snooze:"10 分钟后再提醒",
-      started:"已开始计时：{t} 第一次复习", setDone:"「{name}」8 轮复习全部完成", nextToast:"下一轮：{t}",
+      started:"已开始计时：{t} 第一次复习", setDone:"「{name}」{n} 轮复习全部完成", nextToast:"下一轮：{t}",
       snoozed:"10 分钟后再提醒", icsDone:"已导出，打开文件即可加入日历",
       nTitle:"该复习了：{name}", nBody:"第 {n} 轮 · {label}", flash:"【该复习了 ×{n}】",
       icsSummary:"复习单词：{name}（第 {n} 轮 · {label}）", icsDesc:"按艾宾浩斯遗忘曲线复习", icsAlarm:"该复习「{name}」了",
@@ -297,19 +334,24 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
     en: {
       htmlLang:"en", langBtn:"中文", docTitle:"Vocab Review Clock",
       title:"Vocab Review Clock",
-      tagline:"Reminds you to review at the 8 checkpoints of the Ebbinghaus forgetting curve · pop-ups only, never a sound",
+      tagline:"Reminds you to review along the Ebbinghaus forgetting curve (8 recommended checkpoints, fully customizable) · pop-ups only, never a sound",
       chipSilent:"<b>Silent</b> reminders", chipLocal:"<b>Saved</b> in this browser", chipNoStore:"<b>Not saved</b> (browser storage is blocked)",
       stripAria:"Review checkpoints", round:"Round {n}", bedStrip:"or by {t} tonight",
-      stages:["after 5 min","after 30 min","after 12 h / tonight","after 1 day","after 2 days","after 4 days","after 7 days","after 15 days"],
-      stagesStrip:["5 min","30 min","12 h","1 day","2 days","4 days","7 days","15 days"],
-      stagesShort:["5m","30m","12h","1d","2d","4d","7d","15d"],
+      unitLong:{m:"min",h:"h",d:"days",d1:"day"}, unitShort:{m:"m",h:"h",d:"d"},
+      stageLong:"after {v} {u}", stageEve:" / tonight",
+      planChipRec:"<b>Recommended</b> plan", planChipCustom:"<b>Custom</b> plan · {n} reviews",
+      planTitle:"Review plan", planRec:"Recommended (8)", planCustom:"Custom",
+      planRecNote:"Follows the Ebbinghaus forgetting curve: review after 5 min, 30 min, 12 h (or tonight), then 1, 2, 4, 7 and 15 days.",
+      planAdd:"+ Add a review", planReset:"Reset to recommended", planIdx:"#{n}", planEve:"No later than tonight’s cutoff",
+      planRemove:"Remove review {n}", planMax:"Up to {n} reviews",
+      planHint:"Every interval is counted from when you finished studying; reviews are sorted by time after each edit. Changes apply to new sets only — sets in progress keep their schedule.",
       dueBar:"<strong>{n} set(s) due for review</strong> · {names}", openReminder:"Open reminder", sep:", ",
       newSet:"New word set", nameLabel:"Set name", namePh:"e.g. TOEFL List 3 (1–50)",
       startLabel:"Finished studying at", startHint:"Every review is timed from this moment. Just finished? Leave it as is.",
       wordsLabel:"Words (optional)", wordsPh:"Paste the words here — the reminder pop-up will show them for review",
-      previewHead:"Starting from this time, your 8 reviews are at:", previewPick:"Pick a time to preview the schedule", start:"Start timer",
+      previewHead:"Starting from this time, your {n} reviews are at:", previewPick:"Pick a time to preview the schedule", start:"Start timer",
       settings:"Settings", bedLabel:"“Tonight” cutoff",
-      bedHint:"Round 3 uses whichever comes first: 12 hours later, or this time tonight. Applies to sets you add afterwards.",
+      bedHint:"A review marked “no later than tonight” (round 3 in the recommended plan) uses whichever comes first: its interval, or this time tonight.",
       notify:"Also send silent system notifications", notifyNote:"Shows a banner even when the tab is in the background (no sound)",
       notifyUnsupported:"This browser doesn't support system notifications — pop-ups only",
       notifyDenied:"Notification permission wasn't granted — pop-ups only",
@@ -318,9 +360,9 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
       imported:"Imported {n} set(s)", importFail:"That file isn't a valid backup", exported:"Backup downloaded",
       listHead:"In progress", countActive:"{n} active", countDone:" · {n} completed",
       emptyTitle:"Nothing to review yet", emptyBody:"Fill in the set you just studied and press “Start timer” — the first reminder pops up in 5 minutes.",
-      finished:"Finished all 8 rounds ({n})",
-      studiedAt:"Studied {t} · {d}/8 reviewed", pillDone:"Done", pillDue:"Due", pillWait:"Round {n} next",
-      allDone:"All 8 rounds done · last on {t}", mastered:"Mastered",
+      finished:"Finished all reviews ({n})",
+      studiedAt:"Studied {t} · {d}/{n} reviewed", pillDone:"Done", pillDue:"Due", pillWait:"Round {n} next",
+      allDone:"All {n} rounds done · last on {t}", mastered:"Mastered",
       dueNow:"<b>Round {n} is due now</b> · scheduled {t}", late:" ({r} late)", snoozing:" · snoozed",
       upcoming:"Next: <b>Round {n} · <span class=\"num\">{t}</span></b> (in {r})",
       reviewed:"Reviewed", early:"Reviewed early", viewWords:"Show words ({n} lines)",
@@ -328,7 +370,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
       tipDone:"Reviewed {t}", tipPlan:"Scheduled {t}",
       kicker:"Review reminder", titleOne:"Time to review “{name}”", titleMany:"{n} sets are due",
       mMeta:"Round {n} · {label} · scheduled {t}", mWords:"Words", snooze:"Remind me in 10 min",
-      started:"Timer started — first review {t}", setDone:"“{name}”: all 8 rounds complete", nextToast:"Next review: {t}",
+      started:"Timer started — first review {t}", setDone:"“{name}”: all {n} rounds complete", nextToast:"Next review: {t}",
       snoozed:"I’ll remind you again in 10 minutes", icsDone:"Exported — open the file to add it to your calendar",
       nTitle:"Time to review: {name}", nBody:"Round {n} · {label}", flash:"[Review due ×{n}]",
       icsSummary:"Review words: {name} (round {n} · {label})", icsDesc:"Ebbinghaus spaced review", icsAlarm:"Time to review “{name}”",
@@ -344,8 +386,14 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
   };
 
   var MIN = 60e3, HOUR = 60*MIN, DAY = 24*HOUR, SNOOZE = 10*MIN;
-  var STAGE_MS = [5*MIN, 30*MIN, 12*HOUR, DAY, 2*DAY, 4*DAY, 7*DAY, 15*DAY];
-  var EVENING = 2;
+  var UNIT_MS = {m:MIN, h:HOUR, d:DAY};
+  var UNIT_MAX = {m:999, h:999, d:365};
+  var MAX_STAGES = 20;
+  /* Recommended plan. Each review: v = amount, u = unit (m/h/d), eve = "no later than tonight's cutoff". */
+  var DEFAULT_PLAN = [
+    {v:5,u:"m"}, {v:30,u:"m"}, {v:12,u:"h",eve:true}, {v:1,u:"d"},
+    {v:2,u:"d"}, {v:4,u:"d"}, {v:7,u:"d"}, {v:15,u:"d"}
+  ];
   var LS_BATCHES = "ebb-review-batches-v1", LS_SET = "ebb-review-settings-v1";
 
   function $(id){ return document.getElementById(id); }
@@ -357,7 +405,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
 
   var state = {
     batches: lsGet(LS_BATCHES, []),
-    settings: Object.assign({bedtime:"22:00", notify:false, lang:null}, lsGet(LS_SET, {})),
+    settings: Object.assign({bedtime:"22:00", notify:false, lang:null, planMode:"rec", customPlan:null}, lsGet(LS_SET, {})),
     pendingDelete: null
   };
   if (!Array.isArray(state.batches)) state.batches = [];
@@ -378,14 +426,37 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
   }
 
   /* ================= schedule ================= */
+  function stageMs(st){ return st.v * UNIT_MS[st.u]; }
+  function validStage(st){
+    return st && typeof st === "object" && UNIT_MS.hasOwnProperty(st.u) &&
+      typeof st.v === "number" && st.v >= 1 && st.v <= UNIT_MAX[st.u] && Math.floor(st.v) === st.v;
+  }
+  function normalizePlan(plan){
+    var out = (Array.isArray(plan) ? plan : []).filter(validStage)
+      .map(function(st){ return {v:st.v, u:st.u, eve:!!st.eve && st.v * UNIT_MS[st.u] < DAY}; })
+      .sort(function(a, b){ return stageMs(a) - stageMs(b); })
+      .slice(0, MAX_STAGES);
+    return out.length ? out : clone(DEFAULT_PLAN);
+  }
+  /* Sets created before custom plans existed have no `stages`: they use the recommended plan. */
+  function planOf(b){ return Array.isArray(b.stages) && b.stages.length ? b.stages : DEFAULT_PLAN; }
+  function currentPlan(){ return state.settings.planMode === "custom" ? normalizePlan(state.settings.customPlan) : DEFAULT_PLAN; }
   function dueAt(b, i){
-    if (i !== EVENING) return b.start + STAGE_MS[i];
-    var t12 = b.start + STAGE_MS[i];
+    var st = planOf(b)[i], base = b.start + stageMs(st);
+    if (!st.eve) return base;
     var hm = String(b.bedtime || "22:00").split(":");
     var d = new Date(b.start); d.setHours(+hm[0] || 0, +hm[1] || 0, 0, 0);
     var bed = d.getTime();
-    var minBed = b.start + STAGE_MS[1] + 30*MIN;   // keep at least 30 min after round 2
-    return (bed >= minBed && bed < t12) ? bed : t12;
+    var prev = i > 0 ? dueAt(b, i - 1) : b.start;
+    var minBed = prev + 30*MIN;                    // keep at least 30 min after the previous review
+    return (bed >= minBed && bed < base) ? bed : base;
+  }
+  function stageLabel(st, kind){
+    var x = L();
+    if (kind === "short") return st.v + x.unitShort[st.u];
+    var unit = (st.u === "d" && st.v === 1 && x.unitLong.d1) ? x.unitLong.d1 : x.unitLong[st.u];
+    if (kind === "strip") return st.v + " " + unit;
+    return t("stageLong", {v:st.v, u:unit}) + (st.eve ? x.stageEve : "");
   }
   function curStage(b){ return b.done.findIndex(function(x){ return !x; }); }
   function isDue(b, now){ var i = curStage(b); return i >= 0 && now >= dueAt(b, i) && now >= (b.snooze || 0); }
@@ -434,7 +505,9 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
   });
   function validBatch(b){
     return b && typeof b === "object" && typeof b.id === "string" && typeof b.name === "string" &&
-      typeof b.start === "number" && isFinite(b.start) && Array.isArray(b.done) && b.done.length === 8;
+      typeof b.start === "number" && isFinite(b.start) && Array.isArray(b.done) &&
+      (b.stages == null ? b.done.length === DEFAULT_PLAN.length
+        : Array.isArray(b.stages) && b.stages.length > 0 && b.stages.every(validStage) && b.done.length === b.stages.length);
   }
 
   function downloadFile(name, text, type){
@@ -466,6 +539,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
           b.snooze = typeof b.snooze === "number" ? b.snooze : 0;
           b.words = typeof b.words === "string" ? b.words : "";
           b.bedtime = /^\d{1,2}:\d{2}$/.test(b.bedtime) ? b.bedtime : "22:00";
+          if (Array.isArray(b.stages)) b.stages = b.stages.map(function(st){ return {v:st.v, u:st.u, eve:!!st.eve}; });
           var i = state.batches.findIndex(function(x){ return x.id === b.id; });
           if (i >= 0) state.batches[i] = b; else state.batches.push(b);
         });
@@ -481,12 +555,13 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
     function z(ts){ return new Date(ts).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""); }
     function e(s){ return String(s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n"); }
     var out = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//ebbinghaus-review-clock//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH"];
-    for (var i = 0; i < 8; i++){
+    var plan = planOf(b);
+    for (var i = 0; i < plan.length; i++){
       if (b.done[i]) continue;
       var ts = dueAt(b, i);
       out.push("BEGIN:VEVENT","UID:" + b.id + "-" + i + "@ebbinghaus-review-clock","DTSTAMP:" + z(Date.now()),
         "DTSTART:" + z(ts),"DTEND:" + z(ts + 15*MIN),
-        "SUMMARY:" + e(t("icsSummary", {name:b.name, n:i+1, label:L().stages[i]})),
+        "SUMMARY:" + e(t("icsSummary", {name:b.name, n:i+1, label:stageLabel(plan[i])})),
         "DESCRIPTION:" + e(b.words ? b.words.slice(0, 1500) : t("icsDesc")),
         "TRANSP:TRANSPARENT",
         "BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:" + e(t("icsAlarm", {name:b.name})),"TRIGGER:PT0M","END:VALARM","END:VEVENT");
@@ -505,7 +580,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
   var canNotify = "Notification" in window;
   function sysNotify(b, i){
     if (!state.settings.notify || !canNotify || Notification.permission !== "granted") return;
-    try { new Notification(t("nTitle", {name:b.name}), {body:t("nBody", {n:i+1, label:L().stages[i]}), silent:true, tag:b.id}); } catch(e){}
+    try { new Notification(t("nTitle", {name:b.name}), {body:t("nBody", {n:i+1, label:stageLabel(planOf(b)[i])}), silent:true, tag:b.id}); } catch(e){}
   }
   var notifyNoteKey = "notifyNote";
   $("notifyToggle").checked = !!state.settings.notify && canNotify && Notification.permission === "granted";
@@ -526,7 +601,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
   $("bedtime").addEventListener("change", function(ev){
     if (!ev.target.value) return;
     state.settings.bedtime = ev.target.value; lsSet(LS_SET, state.settings);
-    renderStrip(); renderPreview();
+    renderStrip(); renderPreview(); renderPlanEditor();
   });
   $("bStart").value = toLocalInput(Date.now());
   var startTouched = false;
@@ -538,9 +613,10 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
     var start = new Date($("bStart").value).getTime();
     if (!name){ $("bName").focus(); return; }
     if (!isFinite(start)){ $("bStart").focus(); return; }
+    var plan = clone(currentPlan());
     var b = {id:"b" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), name:name,
       words:$("bWords").value.trim(), start:start, bedtime:state.settings.bedtime,
-      done:[0,0,0,0,0,0,0,0], snooze:0, created:Date.now()};
+      stages:plan, done:plan.map(function(){ return 0; }), snooze:0, created:Date.now()};
     upsert(b);
     $("bName").value = ""; $("bWords").value = ""; startTouched = false;
     $("bStart").value = toLocalInput(Date.now()); renderPreview();
@@ -555,7 +631,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
     b.done[i] = Date.now(); b.snooze = 0;
     upsert(b);
     var n = curStage(b);
-    toast(n < 0 ? t("setDone", {name:b.name}) : t("nextToast", {t: fmtAbs(dueAt(b, n))}));
+    toast(n < 0 ? t("setDone", {name:b.name, n:b.done.length}) : t("nextToast", {t: fmtAbs(dueAt(b, n))}));
     check();
   }
   function snoozeAll(){
@@ -593,26 +669,103 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
     $("notifyNote").textContent = t(notifyNoteKey);
     $("langBtn").textContent = L().langBtn;
     $("storeChip").innerHTML = storageOk ? t("chipLocal") : t("chipNoStore");
-    renderStrip(); renderPreview(); render();
+    renderStrip(); renderPreview(); renderPlanEditor(); render();
   }
+  function bedLabel(){ return lang === "zh" ? state.settings.bedtime : hm(new Date("2000-01-01T" + state.settings.bedtime)); }
   function renderStrip(){
-    var x = L();
-    $("strip").innerHTML = x.stagesStrip.map(function(s, i){
-      var sub = i === EVENING ? t("bedStrip", {t: lang === "zh" ? state.settings.bedtime : hm(new Date("2000-01-01T" + state.settings.bedtime))}) : t("round", {n:i+1});
-      return "<li><strong>" + esc(s) + "</strong>" + esc(sub) + "</li>";
+    var plan = currentPlan(), ol = $("strip");
+    ol.style.gridTemplateColumns = "repeat(" + plan.length + ",minmax(76px,1fr))";
+    ol.style.minWidth = (plan.length * 78) + "px";
+    ol.innerHTML = plan.map(function(st, i){
+      var sub = st.eve ? t("bedStrip", {t: bedLabel()}) : t("round", {n:i+1});
+      return "<li><strong>" + esc(stageLabel(st, "strip")) + "</strong>" + esc(sub) + "</li>";
     }).join("");
+    var custom = state.settings.planMode === "custom";
+    $("planChip").innerHTML = custom ? t("planChipCustom", {n:plan.length}) : t("planChipRec");
   }
+
+  /* ================= plan editor ================= */
+  function editablePlan(){
+    if (!Array.isArray(state.settings.customPlan) || !state.settings.customPlan.length) state.settings.customPlan = clone(DEFAULT_PLAN);
+    return state.settings.customPlan;
+  }
+  function savePlan(resort){
+    var plan = editablePlan();
+    if (resort) state.settings.customPlan = normalizePlan(plan);
+    lsSet(LS_SET, state.settings);
+    renderStrip(); renderPreview();
+    if (resort) renderPlanEditor();
+  }
+  function renderPlanEditor(){
+    var custom = state.settings.planMode === "custom";
+    $("planRec").checked = !custom; $("planCustom").checked = custom;
+    $("planEditor").hidden = !custom; $("planRecNote").hidden = custom;
+    if (!custom) return;
+    var plan = editablePlan(), x = L(), one = plan.length <= 1;
+    $("planRows").innerHTML = plan.map(function(st, i){
+      var opts = ["m","h","d"].map(function(u){ return "<option value='" + u + "'" + (st.u === u ? " selected" : "") + ">" + esc(u === "d" && st.v === 1 && x.unitLong.d1 ? x.unitLong.d1 : x.unitLong[u]) + "</option>"; }).join("");
+      var lab = esc(t("planIdx", {n:i+1})), rm = esc(t("planRemove", {n:i+1}));
+      return "<li class='plan-row' data-i='" + i + "'>" +
+        "<span class='idx'>" + lab + "</span>" +
+        "<input type='number' id='planV" + i + "' inputmode='numeric' min='1' max='" + UNIT_MAX[st.u] + "' step='1' value='" + st.v + "' aria-label='" + lab + "'>" +
+        "<select id='planU" + i + "' aria-label='" + lab + "'>" + opts + "</select>" +
+        "<button class='btn ghost small x' type='button' data-plan-del='" + i + "'" + (one ? " disabled" : "") + " aria-label='" + rm + "' title='" + rm + "'>×</button>" +
+        (stageMs(st) < DAY ? "<label class='eve'><input type='checkbox' id='planE" + i + "'" + (st.eve ? " checked" : "") + ">" + esc(t("planEve")) + " (" + esc(bedLabel()) + ")</label>" : "") +
+        "</li>";
+    }).join("");
+    var full = plan.length >= MAX_STAGES;
+    $("planAdd").disabled = full;
+    $("planAdd").title = full ? t("planMax", {n:MAX_STAGES}) : "";
+  }
+  function onPlanMode(){
+    state.settings.planMode = $("planCustom").checked ? "custom" : "rec";
+    if (state.settings.planMode === "custom") editablePlan();
+    lsSet(LS_SET, state.settings);
+    renderPlanEditor(); renderStrip(); renderPreview();
+  }
+  $("planRec").addEventListener("change", onPlanMode);
+  $("planCustom").addEventListener("change", onPlanMode);
+  $("planRows").addEventListener("change", function(ev){
+    var row = ev.target.closest(".plan-row"); if (!row) return;
+    var i = +row.getAttribute("data-i"), st = editablePlan()[i]; if (!st) return;
+    if (ev.target.id === "planE" + i){ st.eve = ev.target.checked; savePlan(false); return; }
+    if (ev.target.id === "planU" + i) st.u = ev.target.value;
+    var v = Math.round(+$("planV" + i).value);
+    st.v = Math.min(UNIT_MAX[st.u], Math.max(1, isFinite(v) ? v : 1));
+    savePlan(true);
+  });
+  $("planRows").addEventListener("click", function(ev){
+    var btn = ev.target.closest("[data-plan-del]"); if (!btn) return;
+    var plan = editablePlan(); if (plan.length <= 1) return;
+    plan.splice(+btn.getAttribute("data-plan-del"), 1);
+    savePlan(true);
+  });
+  $("planAdd").addEventListener("click", function(){
+    var plan = editablePlan(); if (plan.length >= MAX_STAGES) return;
+    var last = plan[plan.length - 1];
+    var next = last ? (last.u === "d" ? {v:Math.min(365, last.v * 2), u:"d"} : {v:1, u:"d"}) : {v:1, u:"d"};
+    if (last && last.u === "d" && last.v >= 365) next = {v:365, u:"d"};
+    plan.push(next);
+    savePlan(true);
+    var inputs = $("planRows").querySelectorAll("input[type=number]");
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  });
+  $("planReset").addEventListener("click", function(){
+    state.settings.customPlan = clone(DEFAULT_PLAN);
+    savePlan(true);
+  });
   function renderPreview(){
     var ts = new Date($("bStart").value).getTime();
     if (!isFinite(ts)){ $("preview").innerHTML = "<p>" + esc(t("previewPick")) + "</p>"; return; }
-    var b = {start:ts, bedtime:state.settings.bedtime};
-    $("preview").innerHTML = "<p>" + esc(t("previewHead")) + "</p><ol>" + L().stagesShort.map(function(s, i){
-      return "<li><span>" + esc(s) + "</span><b class=\"num\">" + esc(fmtAbs(dueAt(b, i))) + "</b></li>";
+    var plan = currentPlan(), b = {start:ts, bedtime:state.settings.bedtime, stages:plan};
+    $("preview").innerHTML = "<p>" + esc(t("previewHead", {n:plan.length})) + "</p><ol>" + plan.map(function(st, i){
+      return "<li><span>" + esc(stageLabel(st, "short")) + "</span><b class=\"num\">" + esc(fmtAbs(dueAt(b, i))) + "</b></li>";
     }).join("") + "</ol>";
   }
   function nodesHtml(b, now){
-    var c = curStage(b);
-    return "<ol class=\"nodes\">" + L().stagesShort.map(function(s, i){
+    var c = curStage(b), plan = planOf(b);
+    return "<ol class=\"nodes\" style=\"grid-template-columns:repeat(" + Math.min(plan.length, 8) + ",1fr)\">" + plan.map(function(st, i){
+      var s = stageLabel(st, "short");
       var cls = b.done[i] ? "done" : (i === c ? (now >= dueAt(b, i) ? "due" : "cur") : "");
       var tip = b.done[i] ? t("tipDone", {t: fmtAbs(b.done[i])}) : t("tipPlan", {t: fmtAbs(dueAt(b, i))});
       return "<li class=\"" + cls + "\" title=\"" + esc(tip) + "\"><span class=\"dot\"></span>" + esc(s) + "</li>";
@@ -623,7 +776,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
     var dueNow = c >= 0 && now >= dueAt(b, c);
     var next;
     if (c < 0){
-      next = "<div class=\"next\"><span class=\"when\">" + esc(t("allDone", {t: fmtAbs(Math.max.apply(null, b.done))})) + "</span><span class=\"pill done\">" + esc(t("mastered")) + "</span></div>";
+      next = "<div class=\"next\"><span class=\"when\">" + esc(t("allDone", {n: b.done.length, t: fmtAbs(Math.max.apply(null, b.done))})) + "</span><span class=\"pill done\">" + esc(t("mastered")) + "</span></div>";
     } else {
       var ts = dueAt(b, c), snoozed = b.snooze && b.snooze > now && dueNow;
       var when = dueNow
@@ -644,7 +797,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
       : dueNow ? "<span class=\"pill due\">" + esc(t("pillDue")) + "</span>"
       : "<span class=\"pill\">" + esc(t("pillWait", {n:c+1})) + "</span>";
     return "<article class=\"batch" + (dueNow ? " is-due" : "") + "\">" +
-      "<div class=\"batch-top\"><div><h3>" + esc(b.name) + "</h3><div class=\"meta\">" + esc(t("studiedAt", {t: fmtAbs(b.start), d: doneCount})) + "</div></div>" + pill + "</div>" +
+      "<div class=\"batch-top\"><div><h3>" + esc(b.name) + "</h3><div class=\"meta\">" + esc(t("studiedAt", {t: fmtAbs(b.start), d: doneCount, n: b.done.length})) + "</div></div>" + pill + "</div>" +
       nodesHtml(b, now) + next + words + "<div class=\"batch-actions\">" + actions + "</div></article>";
   }
   function render(){
@@ -682,7 +835,7 @@ footer{color:var(--muted);font-size:12.5px;text-align:center}
       var i = curStage(b);
       var words = b.words ? "<details class=\"words\" open><summary>" + esc(t("mWords")) + "</summary><p>" + esc(b.words) + "</p></details>" : "";
       return "<div class=\"mitem\"><div class=\"mitem-top\"><div><h3>" + esc(b.name) + "</h3><div class=\"meta\">" +
-        esc(t("mMeta", {n:i+1, label:L().stages[i], t:fmtAbs(dueAt(b, i))})) + "</div></div>" +
+        esc(t("mMeta", {n:i+1, label:stageLabel(planOf(b)[i]), t:fmtAbs(dueAt(b, i))})) + "</div></div>" +
         "<button class=\"btn primary small\" type=\"button\" data-act=\"done\" data-id=\"" + esc(b.id) + "\">" + esc(t("reviewed")) + "</button></div>" + words + "</div>";
     }).join("");
     $("overlay").hidden = false;

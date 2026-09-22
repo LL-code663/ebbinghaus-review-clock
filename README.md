@@ -2,7 +2,7 @@
 
 **English** | [中文](README.zh-CN.md)
 
-A silent spaced-repetition reminder for vocabulary, built around the Ebbinghaus forgetting curve. Tell it when you finished studying a word set, and it pops up a reminder at each of the 8 review checkpoints. It shows a pop-up only and never plays a sound.
+A silent spaced-repetition reminder for vocabulary, built around the Ebbinghaus forgetting curve. Tell it when you finished studying a word set, and it pops up a reminder at each review checkpoint: the 8 recommended ones, or your own. It shows a pop-up only and never plays a sound.
 
 **Try it online → https://ll-code663.github.io/ebbinghaus-review-clock/**
 
@@ -10,7 +10,7 @@ A silent spaced-repetition reminder for vocabulary, built around the Ebbinghaus 
 
 ## Review schedule
 
-Every checkpoint is timed from the moment you finished studying the set:
+The **recommended plan** follows the Ebbinghaus forgetting curve. Every checkpoint is timed from the moment you finished studying the set:
 
 | Round | When |
 |---|---|
@@ -25,8 +25,18 @@ Every checkpoint is timed from the moment you finished studying the set:
 
 Reviewing late doesn't push back the later rounds. They always stay anchored to your original study time.
 
+### Your own plan
+
+Switch **Review plan** to **Custom** to set your own schedule:
+
+- Add or remove reviews (1–20), and set each interval in minutes, hours or days.
+- Any review shorter than a day can be marked **no later than tonight's cutoff**.
+- Reviews are sorted by time automatically, and **Reset to recommended** brings back the default 8.
+- Each set remembers the plan it was created with. Changing your plan only affects new sets; sets already in progress keep their schedule.
+
 ## Features
 
+- **Recommended or custom schedule.** Use the Ebbinghaus plan, or pick your own number of reviews and intervals.
 - **Silent by design.** Reminders appear as an in-page pop-up and a flashing tab title. You can also turn on system notifications, which are sent with `silent: true`.
 - **Paste your words.** They show up inside the reminder, so you can review on the spot.
 - **Snooze** a reminder for 10 minutes, or mark a round as reviewed early.
@@ -56,7 +66,7 @@ Everything is stored in your browser's `localStorage`. Nothing is sent anywhere.
 
 Everything lives in `index.html`:
 
-- `STAGE_MS`: the 8 intervals.
+- `DEFAULT_PLAN`: the recommended plan (users can also build their own in the page).
 - `SNOOZE`: the snooze length.
 - `I18N`: all UI text, one object per language. Add a key such as `ja` to add a language.
 
