@@ -6,7 +6,7 @@ A silent spaced-repetition reminder for vocabulary, built around the Ebbinghaus 
 
 **Try it online → https://ll-code663.github.io/ebbinghaus-review-clock/**
 
-![Screenshot](docs/screenshot-en.png)
+![Screenshot](screenshot-en.png)
 
 ## Review schedule
 
