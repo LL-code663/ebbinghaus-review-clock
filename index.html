@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>单词复习钟 · Vocab Review Clock</title>
+<meta name="description" content="A silent spaced-repetition reminder for vocabulary, following the Ebbinghaus forgetting curve: 5 min, 30 min, 12 h (or tonight), 1, 2, 4, 7 and 15 days. 按艾宾浩斯遗忘曲线静音提醒复习单词。">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='34' r='24' fill='%231E6B59'/%3E%3Cpath d='M32 20v15l10 6' stroke='%23fff' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='34' r='24' fill='none' stroke='%23F5C542' stroke-width='4' stroke-dasharray='6 9'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#EDF1EF; --surface:#FFFFFF; --sunk:#F5F8F7; --ink:#15211F; --muted:#5A6A66; --line:#D3DCD9;
+  --accent:#1E6B59; --accent-ink:#FFFFFF; --accent-soft:#DCEDE7;
+  --due:#F5C542; --due-ink:#3A2D00; --due-soft:#FFF4D2;
+  --danger:#B3261E; --shadow:0 18px 50px -18px rgba(12,40,34,.35);
+  --serif:"Noto Serif SC","Songti SC","STSong",Georgia,serif;
+  --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E1513; --surface:#16201D; --sunk:#121A18; --ink:#E4ECE9; --muted:#93A39E; --line:#2A3733;
+    --accent:#5CC3A5; --accent-ink:#08130F; --accent-soft:#1B3029;
+    --due:#E9BA2A; --due-ink:#1C1500; --due-soft:#2E2710;
+    --danger:#F2867D; --shadow:0 18px 50px -18px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E1513; --surface:#16201D; --sunk:#121A18; --ink:#E4ECE9; --muted:#93A39E; --line:#2A3733;
+  --accent:#5CC3A5; --accent-ink:#08130F; --accent-soft:#1B3029;
+  --due:#E9BA2A; --due-ink:#1C1500; --due-soft:#2E2710;
+  --danger:#F2867D; --shadow:0 18px 50px -18px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6;padding-inline:16px;padding-block:calc(env(safe-area-inset-top,0px) + 28px) calc(env(safe-area-inset-bottom,0px) + 40px)}
+.wrap{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+h1,h2,h3{margin:0;text-wrap:balance}
+button,input,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 20px}
+.brand h1{font-family:var(--serif);font-weight:900;font-size:clamp(28px,5vw,40px);letter-spacing:.02em;line-height:1.15}
+.brand p{margin:6px 0 0;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);white-space:nowrap}
+.chip b{font-weight:500;color:var(--ink)}
+.chip svg{width:14px;height:14px;flex:none}
+.lang{cursor:pointer;font-weight:700;color:var(--ink)}
+.lang:hover{border-color:var(--muted)}
+
+.strip{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;overflow-x:auto}
+.strip ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(8,minmax(70px,1fr));min-width:580px}
+.strip li{position:relative;padding-top:18px;font-size:12.5px;color:var(--muted);padding-right:6px}
+.strip li::before{content:"";position:absolute;top:4px;left:0;width:9px;height:9px;border-radius:50%;background:var(--accent)}
+.strip li::after{content:"";position:absolute;top:8px;left:12px;right:4px;height:1px;background:var(--line)}
+.strip li:last-child::after{display:none}
+.strip li strong{display:block;color:var(--ink);font-family:var(--mono);font-weight:700;font-size:14px}
+
+.duebar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;background:var(--due-soft);border:1px solid var(--due);border-radius:14px;padding:12px 16px}
+
+.grid{display:grid;grid-template-columns:1fr;gap:22px;align-items:start}
+@media (min-width:860px){.grid{grid-template-columns:340px 1fr}.side{position:sticky;top:16px}}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px}
+.side{display:flex;flex-direction:column;gap:16px}
+.card h2{font-family:var(--serif);font-size:19px;margin-bottom:12px}
+label{display:block;font-size:13px;font-weight:500;margin-bottom:5px}
+.field{display:flex;flex-direction:column;margin-bottom:14px}
+.field small,.hint{color:var(--muted);font-size:12px;margin-top:4px}
+input[type=text],input[type=datetime-local],input[type=time],textarea{width:100%;background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0}
+textarea{resize:vertical;min-height:72px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 14px;cursor:pointer;font-weight:500;font-size:14px;line-height:1.3}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.due{background:var(--due);border-color:var(--due);color:var(--due-ink)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted);padding-inline:8px}
+.btn.ghost:hover{color:var(--ink)}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.btn.small{padding:5px 10px;font-size:13px}
+.btn.wide{width:100%}
+.preview{margin:4px 0 14px;padding:10px 12px;border-radius:10px;background:var(--sunk);border:1px dashed var(--line);font-size:13px}
+.preview p{margin:0 0 6px;color:var(--muted)}
+.preview ol{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:auto 1fr;gap:2px 12px}
+.preview li{display:contents}
+.preview span{color:var(--muted)}
+
+.switch{display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin:0 0 14px}
+.switch input{margin-top:4px;accent-color:var(--accent);width:16px;height:16px;flex:none}
+.switch span{font-weight:400;font-size:13.5px}
+.switch em{display:block;font-style:normal;color:var(--muted);font-size:12px}
+.subhead{font-size:13px;font-weight:700;margin:4px 0 6px;padding-top:12px;border-top:1px solid var(--line)}
+
+.list{display:flex;flex-direction:column;gap:14px}
+.list-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.list-head h2{font-family:var(--serif);font-size:21px}
+.list-head span{color:var(--muted);font-size:13px}
+.batch{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.batch.is-due{border-color:var(--due);box-shadow:0 0 0 3px var(--due-soft)}
+.batch-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.batch h3{font-size:17px;font-weight:700;overflow-wrap:anywhere}
+.meta{color:var(--muted);font-size:12.5px}
+.next{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;padding:10px 12px;border-radius:10px;background:var(--sunk)}
+.next .when{font-size:14px}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.pill.due{background:var(--due);color:var(--due-ink)}
+.pill.done{background:var(--accent);color:var(--accent-ink)}
+.nodes{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.nodes li{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--muted);text-align:center;line-height:1.2;min-width:0}
+.dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center}
+.nodes li.done .dot{background:var(--accent);border-color:var(--accent)}
+.nodes li.done .dot::after{content:"";width:6px;height:3px;border-left:2px solid var(--accent-ink);border-bottom:2px solid var(--accent-ink);transform:translateY(-1px) rotate(-45deg)}
+.nodes li.cur .dot{border-color:var(--accent);border-width:3px}
+.nodes li.due .dot{background:var(--due);border-color:var(--due)}
+.nodes li.cur,.nodes li.due{color:var(--ink);font-weight:700}
+details.words summary{cursor:pointer;color:var(--muted);font-size:13px}
+details.words p{margin:6px 0 0;white-space:pre-wrap;font-size:13.5px;overflow-wrap:anywhere;max-height:220px;overflow:auto;background:var(--sunk);padding:8px 10px;border-radius:8px}
+.batch-actions{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;align-items:center}
+.empty{border:1px dashed var(--line);border-radius:16px;padding:28px 18px;text-align:center;color:var(--muted);background:var(--surface)}
+.empty strong{display:block;color:var(--ink);font-family:var(--serif);font-size:18px;margin-bottom:4px}
+details.finished>summary{cursor:pointer;color:var(--muted);font-size:14px;padding:4px 0}
+details.finished .list{margin-top:10px}
+
+.notes{color:var(--muted);font-size:13px;line-height:1.7}
+.notes h2{font-family:var(--serif);color:var(--ink);font-size:16px;margin-bottom:6px}
+.notes ul{margin:0;padding-left:1.2em}
+footer{color:var(--muted);font-size:12.5px;text-align:center}
+
+.overlay{position:fixed;inset:0;background:rgba(8,20,17,.45);display:grid;place-items:center;padding:16px;z-index:50}
+.modal{width:min(520px,100%);max-height:calc(100% - 32px);overflow:auto;background:var(--surface);border-radius:18px;border:1px solid var(--line);box-shadow:var(--shadow)}
+.modal-head{padding:18px 20px 12px;border-bottom:1px solid var(--line);background:linear-gradient(var(--due-soft),var(--surface))}
+.kicker{font-size:12px;letter-spacing:.12em;color:var(--muted);font-weight:700;text-transform:uppercase}
+.modal-head h2{font-family:var(--serif);font-size:24px;margin-top:2px}
+.modal-body{padding:12px 20px;display:flex;flex-direction:column;gap:10px}
+.mitem{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px}
+.mitem-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.mitem h3{font-size:16px;overflow-wrap:anywhere}
+.modal-foot{padding:12px 20px 18px;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.pop{animation:pop .22s ease-out}
+@keyframes pop{from{transform:translateY(8px) scale(.98);opacity:.6}to{transform:none;opacity:1}}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:10px;font-size:14px;z-index:60;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:reduce){.pop{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1 data-i18n="title"></h1>
+      <p data-i18n="tagline"></p>
+    </div>
+    <div class="chips">
+      <span class="chip"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 6h2l3-3v10l-3-3H3z"/><path d="M11 6l4 4M15 6l-4 4"/></svg><span data-i18n-html="chipSilent"></span></span>
+      <span class="chip" id="storeChip"></span>
+      <button class="chip lang" type="button" id="langBtn" aria-label="Switch language / 切换语言"></button>
+    </div>
+  </header>
+
+  <section class="strip" data-i18n-aria="stripAria">
+    <ol id="strip"></ol>
+  </section>
+
+  <div id="duebar" class="duebar" hidden></div>
+
+  <div class="grid">
+    <aside class="side">
+      <form class="card" id="addForm" autocomplete="off">
+        <h2 data-i18n="newSet"></h2>
+        <div class="field">
+          <label for="bName" data-i18n="nameLabel"></label>
+          <input type="text" id="bName" maxlength="60" required data-i18n-ph="namePh">
+        </div>
+        <div class="field">
+          <label for="bStart" data-i18n="startLabel"></label>
+          <input type="datetime-local" id="bStart" required>
+          <small data-i18n="startHint"></small>
+        </div>
+        <div class="field">
+          <label for="bWords" data-i18n="wordsLabel"></label>
+          <textarea id="bWords" maxlength="20000" data-i18n-ph="wordsPh"></textarea>
+        </div>
+        <div class="preview" id="preview" aria-live="polite"></div>
+        <button class="btn primary wide" type="submit" data-i18n="start"></button>
+      </form>
+
+      <div class="card">
+        <h2 data-i18n="settings"></h2>
+        <div class="field">
+          <label for="bedtime" data-i18n="bedLabel"></label>
+          <input type="time" id="bedtime" value="22:00">
+          <small data-i18n="bedHint"></small>
+        </div>
+        <label class="switch" for="notifyToggle">
+          <input type="checkbox" id="notifyToggle">
+          <span><span data-i18n="notify"></span><em id="notifyNote" data-i18n="notifyNote"></em></span>
+        </label>
+        <div class="subhead" data-i18n="backup"></div>
+        <div class="row">
+          <button class="btn small" type="button" id="exportBtn" data-i18n="exportJson"></button>
+          <button class="btn small" type="button" id="importBtn" data-i18n="importJson"></button>
+          <input type="file" id="importFile" accept="application/json,.json" hidden>
+        </div>
+        <p class="hint" data-i18n="backupHint"></p>
+      </div>
+    </aside>
+
+    <main class="list" id="main" aria-live="polite"></main>
+  </div>
+
+  <section class="notes card">
+    <h2 data-i18n="notesTitle"></h2>
+    <ul data-i18n-html="notes"></ul>
+  </section>
+
+  <footer data-i18n-html="footer"></footer>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="modal pop" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="modal-head">
+      <div class="kicker" data-i18n="kicker"></div>
+      <h2 id="mTitle"></h2>
+    </div>
+    <div class="modal-body" id="mBody"></div>
+    <div class="modal-foot">
+      <button class="btn" type="button" id="snoozeBtn" data-i18n="snooze"></button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function(){
+  "use strict";
+  var REPO_URL = "https://github.com/LL-code663/ebbinghaus-review-clock";
+
+  /* ================= i18n ================= */
+  var I18N = {
+    zh: {
+      htmlLang:"zh-CN", langBtn:"EN", docTitle:"单词复习钟",
+      title:"单词复习钟",
+      tagline:"按艾宾浩斯遗忘曲线的 8 个节点提醒你复习 · 只弹窗，不响铃",
+      chipSilent:"<b>静音</b>提醒", chipLocal:"<b>保存</b>在此浏览器", chipNoStore:"<b>无法保存</b>（浏览器禁用了存储）",
+      stripAria:"复习节点", round:"第 {n} 轮", bedStrip:"或当晚 {t} 前",
+      stages:["5 分钟后","30 分钟后","12 小时后 / 当晚","1 天后","2 天后","4 天后","7 天后","15 天后"],
+      stagesStrip:["5 分钟","30 分钟","12 小时","1 天","2 天","4 天","7 天","15 天"],
+      stagesShort:["5分","30分","12时","1天","2天","4天","7天","15天"],
+      dueBar:"<strong>{n} 组单词到复习时间了</strong> · {names}", openReminder:"打开提醒", sep:"、",
+      newSet:"新背一组单词", nameLabel:"这组叫什么", namePh:"例如：托福 List 3（1–50）",
+      startLabel:"背完的时间", startHint:"所有复习时间都从这一刻算起。刚背完就保持默认。",
+      wordsLabel:"单词（可选）", wordsPh:"粘贴本组单词，提醒弹窗里可以直接展开复习",
+      previewHead:"从这个时间算起，8 次复习分别在：", previewPick:"选一个时间来预览复习节点", start:"开始计时",
+      settings:"设置", bedLabel:"“当晚”截止时间",
+      bedHint:"第 3 轮取「12 小时后」和「当晚这个时间」中更早的那个；只影响之后新建的组。",
+      notify:"同时发静音系统通知", notifyNote:"页面在后台时也能看到横幅（无声音）",
+      notifyUnsupported:"当前浏览器不支持系统通知，会只用页面弹窗提醒",
+      notifyDenied:"系统通知没有获得许可，会只用页面弹窗提醒",
+      backup:"备份", exportJson:"导出备份", importJson:"导入备份",
+      backupHint:"数据只存在这个浏览器里。换电脑或清理浏览器数据前，先导出备份。",
+      imported:"已导入 {n} 组", importFail:"这个文件不是有效的备份", exported:"备份已下载",
+      listHead:"正在复习", countActive:"{n} 组进行中", countDone:" · {n} 组已完成",
+      emptyTitle:"还没有要复习的单词", emptyBody:"在左边填上刚背完的这一组，点「开始计时」，5 分钟后就会弹出第一次提醒。",
+      finished:"已完成 8 轮的组（{n}）",
+      studiedAt:"背完于 {t} · 已复习 {d}/8", pillDone:"完成", pillDue:"到点了", pillWait:"第 {n} 轮待复习",
+      allDone:"全部 8 轮已完成 · 最后一次 {t}", mastered:"已掌握",
+      dueNow:"<b>第 {n} 轮现在该复习</b> · 计划 {t}", late:"（已过 {r}）", snoozing:" · 稍后提醒中",
+      upcoming:"下一轮：<b>第 {n} 轮 · <span class=\"num\">{t}</span></b>（还有 {r}）",
+      reviewed:"已复习", early:"提前复习完了", viewWords:"查看单词（{n} 行）",
+      ics:"导出到日历", del:"删除", confirmDel:"确定删除这一组？", cancel:"取消",
+      tipDone:"已复习 {t}", tipPlan:"计划 {t}",
+      kicker:"复习提醒", titleOne:"该复习「{name}」了", titleMany:"有 {n} 组该复习了",
+      mMeta:"第 {n} 轮 · {label} · 计划 {t}", mWords:"本组单词", snooze:"10 分钟后再提醒",
+      started:"已开始计时：{t} 第一次复习", setDone:"「{name}」8 轮复习全部完成", nextToast:"下一轮：{t}",
+      snoozed:"10 分钟后再提醒", icsDone:"已导出，打开文件即可加入日历",
+      nTitle:"该复习了：{name}", nBody:"第 {n} 轮 · {label}", flash:"【该复习了 ×{n}】",
+      icsSummary:"复习单词：{name}（第 {n} 轮 · {label}）", icsDesc:"按艾宾浩斯遗忘曲线复习", icsAlarm:"该复习「{name}」了",
+      notesTitle:"使用须知",
+      notes:"<li>提醒只在这个页面<strong>开着时</strong>弹出——放在后台标签页即可，不用一直盯着。</li>" +
+            "<li>关掉页面也没关系：下次打开时，所有已经到点的复习会立刻补弹出来。</li>" +
+            "<li>想在页面关闭时也收到提醒，可以在某一组上点「导出到日历」。日历里用的是“显示”类型的提醒；记得把日历的提醒音设为无。</li>" +
+            "<li>“稍后提醒”会在 10 分钟后再弹一次；晚复习不会推迟后面的节点，后续时间仍从背完那一刻算。</li>",
+      footer:"开源项目 · MIT 许可 · <a href=\"{repo}\" target=\"_blank\" rel=\"noopener\">GitHub 源代码</a>",
+      today:"今天", tomorrow:"明天", dayAfter:"后天", yesterday:"昨天", weekdays:"日一二三四五六",
+      relLt1:"不到 1 分钟", relMin:"{m} 分钟", relHour:"{h} 小时", relHourMin:"{h} 小时 {m} 分", relDay:"{d} 天", relDayHour:"{d} 天 {h} 小时"
+    },
+    en: {
+      htmlLang:"en", langBtn:"中文", docTitle:"Vocab Review Clock",
+      title:"Vocab Review Clock",
+      tagline:"Reminds you to review at the 8 checkpoints of the Ebbinghaus forgetting curve · pop-ups only, never a sound",
+      chipSilent:"<b>Silent</b> reminders", chipLocal:"<b>Saved</b> in this browser", chipNoStore:"<b>Not saved</b> (browser storage is blocked)",
+      stripAria:"Review checkpoints", round:"Round {n}", bedStrip:"or by {t} tonight",
+      stages:["after 5 min","after 30 min","after 12 h / tonight","after 1 day","after 2 days","after 4 days","after 7 days","after 15 days"],
+      stagesStrip:["5 min","30 min","12 h","1 day","2 days","4 days","7 days","15 days"],
+      stagesShort:["5m","30m","12h","1d","2d","4d","7d","15d"],
+      dueBar:"<strong>{n} set(s) due for review</strong> · {names}", openReminder:"Open reminder", sep:", ",
+      newSet:"New word set", nameLabel:"Set name", namePh:"e.g. TOEFL List 3 (1–50)",
+      startLabel:"Finished studying at", startHint:"Every review is timed from this moment. Just finished? Leave it as is.",
+      wordsLabel:"Words (optional)", wordsPh:"Paste the words here — the reminder pop-up will show them for review",
+      previewHead:"Starting from this time, your 8 reviews are at:", previewPick:"Pick a time to preview the schedule", start:"Start timer",
+      settings:"Settings", bedLabel:"“Tonight” cutoff",
+      bedHint:"Round 3 uses whichever comes first: 12 hours later, or this time tonight. Applies to sets you add afterwards.",
+      notify:"Also send silent system notifications", notifyNote:"Shows a banner even when the tab is in the background (no sound)",
+      notifyUnsupported:"This browser doesn't support system notifications — pop-ups only",
+      notifyDenied:"Notification permission wasn't granted — pop-ups only",
+      backup:"Backup", exportJson:"Export backup", importJson:"Import backup",
+      backupHint:"Your data lives only in this browser. Export a backup before switching devices or clearing browser data.",
+      imported:"Imported {n} set(s)", importFail:"That file isn't a valid backup", exported:"Backup downloaded",
+      listHead:"In progress", countActive:"{n} active", countDone:" · {n} completed",
+      emptyTitle:"Nothing to review yet", emptyBody:"Fill in the set you just studied and press “Start timer” — the first reminder pops up in 5 minutes.",
+      finished:"Finished all 8 rounds ({n})",
+      studiedAt:"Studied {t} · {d}/8 reviewed", pillDone:"Done", pillDue:"Due", pillWait:"Round {n} next",
+      allDone:"All 8 rounds done · last on {t}", mastered:"Mastered",
+      dueNow:"<b>Round {n} is due now</b> · scheduled {t}", late:" ({r} late)", snoozing:" · snoozed",
+      upcoming:"Next: <b>Round {n} · <span class=\"num\">{t}</span></b> (in {r})",
+      reviewed:"Reviewed", early:"Reviewed early", viewWords:"Show words ({n} lines)",
+      ics:"Add to calendar", del:"Delete", confirmDel:"Delete this set?", cancel:"Cancel",
+      tipDone:"Reviewed {t}", tipPlan:"Scheduled {t}",
+      kicker:"Review reminder", titleOne:"Time to review “{name}”", titleMany:"{n} sets are due",
+      mMeta:"Round {n} · {label} · scheduled {t}", mWords:"Words", snooze:"Remind me in 10 min",
+      started:"Timer started — first review {t}", setDone:"“{name}”: all 8 rounds complete", nextToast:"Next review: {t}",
+      snoozed:"I’ll remind you again in 10 minutes", icsDone:"Exported — open the file to add it to your calendar",
+      nTitle:"Time to review: {name}", nBody:"Round {n} · {label}", flash:"[Review due ×{n}]",
+      icsSummary:"Review words: {name} (round {n} · {label})", icsDesc:"Ebbinghaus spaced review", icsAlarm:"Time to review “{name}”",
+      notesTitle:"Good to know",
+      notes:"<li>Reminders only pop up while this page is <strong>open</strong> — a background tab is fine.</li>" +
+            "<li>Closed it? No problem: next time you open the page, every review that came due pops up right away.</li>" +
+            "<li>Want reminders even when the page is closed? Use “Add to calendar” on a set. The events use display-only alerts; set your calendar’s alert sound to none.</li>" +
+            "<li>“Remind me in 10 min” snoozes once. Reviewing late doesn’t push back later rounds — they’re always timed from when you finished studying.</li>",
+      footer:"Open source · MIT License · <a href=\"{repo}\" target=\"_blank\" rel=\"noopener\">Source on GitHub</a>",
+      today:"Today", tomorrow:"Tomorrow", dayAfter:null, yesterday:"Yesterday", weekdays:null,
+      relLt1:"under 1 min", relMin:"{m} min", relHour:"{h} h", relHourMin:"{h} h {m} min", relDay:"{d} d", relDayHour:"{d} d {h} h"
+    }
+  };
+
+  var MIN = 60e3, HOUR = 60*MIN, DAY = 24*HOUR, SNOOZE = 10*MIN;
+  var STAGE_MS = [5*MIN, 30*MIN, 12*HOUR, DAY, 2*DAY, 4*DAY, 7*DAY, 15*DAY];
+  var EVENING = 2;
+  var LS_BATCHES = "ebb-review-batches-v1", LS_SET = "ebb-review-settings-v1";
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+  var storageOk = true;
+  function lsGet(k, d){ try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ storageOk = false; return d; } }
+  function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){ storageOk = false; } }
+
+  var state = {
+    batches: lsGet(LS_BATCHES, []),
+    settings: Object.assign({bedtime:"22:00", notify:false, lang:null}, lsGet(LS_SET, {})),
+    pendingDelete: null
+  };
+  if (!Array.isArray(state.batches)) state.batches = [];
+
+  function pickLang(){
+    var q = (location.search.match(/[?&]lang=(zh|en)/) || [])[1] || (location.hash.match(/^#(zh|en)$/) || [])[1];
+    if (q) return q;
+    if (state.settings.lang) return state.settings.lang;
+    var nav = (navigator.languages && navigator.languages[0]) || navigator.language || "en";
+    return /^zh/i.test(nav) ? "zh" : "en";
+  }
+  var lang = pickLang();
+  function L(){ return I18N[lang]; }
+  function t(key, p){
+    var s = L()[key];
+    if (s == null) return key;
+    return String(s).replace(/\{(\w+)\}/g, function(_, k){ return p && p[k] != null ? p[k] : ""; });
+  }
+
+  /* ================= schedule ================= */
+  function dueAt(b, i){
+    if (i !== EVENING) return b.start + STAGE_MS[i];
+    var t12 = b.start + STAGE_MS[i];
+    var hm = String(b.bedtime || "22:00").split(":");
+    var d = new Date(b.start); d.setHours(+hm[0] || 0, +hm[1] || 0, 0, 0);
+    var bed = d.getTime();
+    var minBed = b.start + STAGE_MS[1] + 30*MIN;   // keep at least 30 min after round 2
+    return (bed >= minBed && bed < t12) ? bed : t12;
+  }
+  function curStage(b){ return b.done.findIndex(function(x){ return !x; }); }
+  function isDue(b, now){ var i = curStage(b); return i >= 0 && now >= dueAt(b, i) && now >= (b.snooze || 0); }
+  function dueList(now){ return state.batches.filter(function(b){ return isDue(b, now); }); }
+
+  /* ================= formatting ================= */
+  function pad(n){ return String(n).padStart(2, "0"); }
+  function hm(d){
+    if (lang === "zh") return pad(d.getHours()) + ":" + pad(d.getMinutes());
+    return d.toLocaleTimeString("en-US", {hour:"numeric", minute:"2-digit"});
+  }
+  function fmtAbs(ts){
+    var d = new Date(ts), now = new Date();
+    var day0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    var diff = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() - day0) / DAY);
+    var x = L();
+    if (diff === 0) return x.today + " " + hm(d);
+    if (diff === 1) return x.tomorrow + " " + hm(d);
+    if (diff === 2 && x.dayAfter) return x.dayAfter + " " + hm(d);
+    if (diff === -1) return x.yesterday + " " + hm(d);
+    if (lang === "zh") return (d.getMonth()+1) + "月" + d.getDate() + "日 周" + x.weekdays[d.getDay()] + " " + hm(d);
+    return d.toLocaleDateString("en-US", {weekday:"short", month:"short", day:"numeric"}) + ", " + hm(d);
+  }
+  function fmtRel(ms){
+    ms = Math.max(0, ms);
+    if (ms < MIN) return t("relLt1");
+    if (ms < HOUR) return t("relMin", {m: Math.round(ms/MIN)});
+    if (ms < DAY){ var h = Math.floor(ms/HOUR), m = Math.round((ms % HOUR)/MIN); if (m === 60){ h++; m = 0; } return m ? t("relHourMin", {h:h, m:m}) : t("relHour", {h:h}); }
+    var dd = Math.floor(ms/DAY), hh = Math.round((ms % DAY)/HOUR); if (hh === 24){ dd++; hh = 0; }
+    return hh ? t("relDayHour", {d:dd, h:hh}) : t("relDay", {d:dd});
+  }
+  function toLocalInput(ts){ var d = new Date(ts); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes()); }
+
+  var toastTimer;
+  function toast(msg){ var el = $("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function(){ el.hidden = true; }, 3200); }
+
+  /* ================= storage ================= */
+  function save(){ lsSet(LS_BATCHES, state.batches); }
+  function upsert(b){
+    var i = state.batches.findIndex(function(x){ return x.id === b.id; });
+    if (i >= 0) state.batches[i] = b; else state.batches.push(b);
+    save(); render();
+  }
+  window.addEventListener("storage", function(e){
+    if (e.key === LS_BATCHES){ state.batches = lsGet(LS_BATCHES, []); render(); check(); }
+  });
+  function validBatch(b){
+    return b && typeof b === "object" && typeof b.id === "string" && typeof b.name === "string" &&
+      typeof b.start === "number" && isFinite(b.start) && Array.isArray(b.done) && b.done.length === 8;
+  }
+
+  function downloadFile(name, text, type){
+    var url = URL.createObjectURL(new Blob([text], {type: type}));
+    var a = document.createElement("a"); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  }
+
+  $("exportBtn").addEventListener("click", function(){
+    var d = new Date();
+    downloadFile("review-clock-backup-" + d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + ".json",
+      JSON.stringify({app:"ebbinghaus-review-clock", version:1, exportedAt:d.toISOString(), batches:state.batches}, null, 2), "application/json");
+    toast(t("exported"));
+  });
+  $("importBtn").addEventListener("click", function(){ $("importFile").click(); });
+  $("importFile").addEventListener("change", function(ev){
+    var f = ev.target.files && ev.target.files[0]; if (!f) return;
+    var r = new FileReader();
+    r.onload = function(){
+      try {
+        var data = JSON.parse(r.result);
+        var arr = Array.isArray(data) ? data : data.batches;
+        if (!Array.isArray(arr)) throw 0;
+        var ok = arr.filter(validBatch);
+        if (!ok.length) throw 0;
+        ok.forEach(function(b){
+          b.done = b.done.map(function(x){ return typeof x === "number" ? x : 0; });
+          b.snooze = typeof b.snooze === "number" ? b.snooze : 0;
+          b.words = typeof b.words === "string" ? b.words : "";
+          b.bedtime = /^\d{1,2}:\d{2}$/.test(b.bedtime) ? b.bedtime : "22:00";
+          var i = state.batches.findIndex(function(x){ return x.id === b.id; });
+          if (i >= 0) state.batches[i] = b; else state.batches.push(b);
+        });
+        save(); render(); check(); toast(t("imported", {n: ok.length}));
+      } catch(e){ toast(t("importFail")); }
+      ev.target.value = "";
+    };
+    r.readAsText(f);
+  });
+
+  /* ================= calendar (.ics) ================= */
+  function icsText(b){
+    function z(ts){ return new Date(ts).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""); }
+    function e(s){ return String(s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n"); }
+    var out = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//ebbinghaus-review-clock//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH"];
+    for (var i = 0; i < 8; i++){
+      if (b.done[i]) continue;
+      var ts = dueAt(b, i);
+      out.push("BEGIN:VEVENT","UID:" + b.id + "-" + i + "@ebbinghaus-review-clock","DTSTAMP:" + z(Date.now()),
+        "DTSTART:" + z(ts),"DTEND:" + z(ts + 15*MIN),
+        "SUMMARY:" + e(t("icsSummary", {name:b.name, n:i+1, label:L().stages[i]})),
+        "DESCRIPTION:" + e(b.words ? b.words.slice(0, 1500) : t("icsDesc")),
+        "TRANSP:TRANSPARENT",
+        "BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:" + e(t("icsAlarm", {name:b.name})),"TRIGGER:PT0M","END:VALARM","END:VEVENT");
+    }
+    out.push("END:VCALENDAR");
+    return out.join("\r\n");
+  }
+  function exportIcs(b){
+    var safe = (b.name || "words").replace(/[\\\/:*?"<>|]+/g, "_").slice(0, 40);
+    downloadFile("review-" + safe + ".ics", icsText(b), "text/calendar");
+    toast(t("icsDone"));
+  }
+
+  /* ================= silent system notifications ================= */
+  var notified = {};
+  var canNotify = "Notification" in window;
+  function sysNotify(b, i){
+    if (!state.settings.notify || !canNotify || Notification.permission !== "granted") return;
+    try { new Notification(t("nTitle", {name:b.name}), {body:t("nBody", {n:i+1, label:L().stages[i]}), silent:true, tag:b.id}); } catch(e){}
+  }
+  var notifyNoteKey = "notifyNote";
+  $("notifyToggle").checked = !!state.settings.notify && canNotify && Notification.permission === "granted";
+  $("notifyToggle").addEventListener("change", function(ev){
+    var box = ev.target;
+    function finish(on, key){ box.checked = on; state.settings.notify = on; lsSet(LS_SET, state.settings); notifyNoteKey = key; $("notifyNote").textContent = t(key); }
+    if (!box.checked){ finish(false, "notifyNote"); return; }
+    if (!canNotify){ finish(false, "notifyUnsupported"); return; }
+    if (Notification.permission === "granted"){ finish(true, "notifyNote"); return; }
+    try {
+      var p = Notification.requestPermission(function(res){ finish(res === "granted", res === "granted" ? "notifyNote" : "notifyDenied"); });
+      if (p && p.then) p.then(function(res){ finish(res === "granted", res === "granted" ? "notifyNote" : "notifyDenied"); });
+    } catch(e){ finish(false, "notifyDenied"); }
+  });
+
+  /* ================= form ================= */
+  $("bedtime").value = state.settings.bedtime;
+  $("bedtime").addEventListener("change", function(ev){
+    if (!ev.target.value) return;
+    state.settings.bedtime = ev.target.value; lsSet(LS_SET, state.settings);
+    renderStrip(); renderPreview();
+  });
+  $("bStart").value = toLocalInput(Date.now());
+  var startTouched = false;
+  $("bStart").addEventListener("input", function(){ startTouched = true; renderPreview(); });
+
+  $("addForm").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var name = $("bName").value.trim();
+    var start = new Date($("bStart").value).getTime();
+    if (!name){ $("bName").focus(); return; }
+    if (!isFinite(start)){ $("bStart").focus(); return; }
+    var b = {id:"b" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), name:name,
+      words:$("bWords").value.trim(), start:start, bedtime:state.settings.bedtime,
+      done:[0,0,0,0,0,0,0,0], snooze:0, created:Date.now()};
+    upsert(b);
+    $("bName").value = ""; $("bWords").value = ""; startTouched = false;
+    $("bStart").value = toLocalInput(Date.now()); renderPreview();
+    toast(t("started", {t: fmtAbs(dueAt(b, 0))}));
+    check();
+  });
+
+  /* ================= actions ================= */
+  function markDone(id){
+    var b0 = state.batches.find(function(x){ return x.id === id; }); if (!b0) return;
+    var b = clone(b0), i = curStage(b); if (i < 0) return;
+    b.done[i] = Date.now(); b.snooze = 0;
+    upsert(b);
+    var n = curStage(b);
+    toast(n < 0 ? t("setDone", {name:b.name}) : t("nextToast", {t: fmtAbs(dueAt(b, n))}));
+    check();
+  }
+  function snoozeAll(){
+    var now = Date.now();
+    dueList(now).forEach(function(b0){ var b = clone(b0); b.snooze = now + SNOOZE; upsert(b); });
+    closeModal(); toast(t("snoozed"));
+  }
+  document.addEventListener("click", function(ev){
+    var el = ev.target.closest("[data-act]"); if (!el) return;
+    var id = el.getAttribute("data-id"), act = el.getAttribute("data-act");
+    if (act === "done") markDone(id);
+    else if (act === "open") openModal(true);
+    else if (act === "ics"){ var b = state.batches.find(function(x){ return x.id === id; }); if (b) exportIcs(b); }
+    else if (act === "del"){ state.pendingDelete = id; render(); }
+    else if (act === "del-no"){ state.pendingDelete = null; render(); }
+    else if (act === "del-yes"){ state.pendingDelete = null; state.batches = state.batches.filter(function(x){ return x.id !== id; }); save(); render(); check(); }
+  });
+  $("snoozeBtn").addEventListener("click", snoozeAll);
+  document.addEventListener("keydown", function(ev){ if (ev.key === "Escape" && !$("overlay").hidden) snoozeAll(); });
+  $("langBtn").addEventListener("click", function(){
+    lang = lang === "zh" ? "en" : "zh";
+    state.settings.lang = lang; lsSet(LS_SET, state.settings);
+    if (/[?&]lang=|^#(zh|en)$/.test(location.search + location.hash)) { try { history.replaceState(null, "", location.pathname); } catch(e){} }
+    applyStatic(); modalSig = ""; if (!$("overlay").hidden) openModal(true);
+  });
+
+  /* ================= render ================= */
+  function applyStatic(){
+    document.documentElement.lang = L().htmlLang;
+    document.title = L().docTitle;
+    [].forEach.call(document.querySelectorAll("[data-i18n]"), function(el){ el.textContent = t(el.getAttribute("data-i18n")); });
+    [].forEach.call(document.querySelectorAll("[data-i18n-html]"), function(el){ el.innerHTML = t(el.getAttribute("data-i18n-html"), {repo: REPO_URL}); });
+    [].forEach.call(document.querySelectorAll("[data-i18n-ph]"), function(el){ el.placeholder = t(el.getAttribute("data-i18n-ph")); });
+    [].forEach.call(document.querySelectorAll("[data-i18n-aria]"), function(el){ el.setAttribute("aria-label", t(el.getAttribute("data-i18n-aria"))); });
+    $("notifyNote").textContent = t(notifyNoteKey);
+    $("langBtn").textContent = L().langBtn;
+    $("storeChip").innerHTML = storageOk ? t("chipLocal") : t("chipNoStore");
+    renderStrip(); renderPreview(); render();
+  }
+  function renderStrip(){
+    var x = L();
+    $("strip").innerHTML = x.stagesStrip.map(function(s, i){
+      var sub = i === EVENING ? t("bedStrip", {t: lang === "zh" ? state.settings.bedtime : hm(new Date("2000-01-01T" + state.settings.bedtime))}) : t("round", {n:i+1});
+      return "<li><strong>" + esc(s) + "</strong>" + esc(sub) + "</li>";
+    }).join("");
+  }
+  function renderPreview(){
+    var ts = new Date($("bStart").value).getTime();
+    if (!isFinite(ts)){ $("preview").innerHTML = "<p>" + esc(t("previewPick")) + "</p>"; return; }
+    var b = {start:ts, bedtime:state.settings.bedtime};
+    $("preview").innerHTML = "<p>" + esc(t("previewHead")) + "</p><ol>" + L().stagesShort.map(function(s, i){
+      return "<li><span>" + esc(s) + "</span><b class=\"num\">" + esc(fmtAbs(dueAt(b, i))) + "</b></li>";
+    }).join("") + "</ol>";
+  }
+  function nodesHtml(b, now){
+    var c = curStage(b);
+    return "<ol class=\"nodes\">" + L().stagesShort.map(function(s, i){
+      var cls = b.done[i] ? "done" : (i === c ? (now >= dueAt(b, i) ? "due" : "cur") : "");
+      var tip = b.done[i] ? t("tipDone", {t: fmtAbs(b.done[i])}) : t("tipPlan", {t: fmtAbs(dueAt(b, i))});
+      return "<li class=\"" + cls + "\" title=\"" + esc(tip) + "\"><span class=\"dot\"></span>" + esc(s) + "</li>";
+    }).join("") + "</ol>";
+  }
+  function batchHtml(b, now){
+    var c = curStage(b), id = esc(b.id);
+    var dueNow = c >= 0 && now >= dueAt(b, c);
+    var next;
+    if (c < 0){
+      next = "<div class=\"next\"><span class=\"when\">" + esc(t("allDone", {t: fmtAbs(Math.max.apply(null, b.done))})) + "</span><span class=\"pill done\">" + esc(t("mastered")) + "</span></div>";
+    } else {
+      var ts = dueAt(b, c), snoozed = b.snooze && b.snooze > now && dueNow;
+      var when = dueNow
+        ? t("dueNow", {n:c+1, t:esc(fmtAbs(ts))}) + (now - ts > 5*MIN ? esc(t("late", {r: fmtRel(now - ts)})) : "") + (snoozed ? esc(t("snoozing")) : "")
+        : t("upcoming", {n:c+1, t:esc(fmtAbs(ts)), r:esc(fmtRel(ts - now))});
+      next = "<div class=\"next\"><span class=\"when\">" + when + "</span>" +
+        (dueNow ? "<button class=\"btn due small\" type=\"button\" data-act=\"done\" data-id=\"" + id + "\">" + esc(t("reviewed")) + "</button>"
+                : "<button class=\"btn small\" type=\"button\" data-act=\"done\" data-id=\"" + id + "\">" + esc(t("early")) + "</button>") + "</div>";
+    }
+    var lines = b.words ? b.words.split(/\n+/).filter(Boolean).length : 0;
+    var words = b.words ? "<details class=\"words\" data-wid=\"" + id + "\"><summary>" + esc(t("viewWords", {n:lines})) + "</summary><p>" + esc(b.words) + "</p></details>" : "";
+    var actions = state.pendingDelete === b.id
+      ? "<span class=\"meta\">" + esc(t("confirmDel")) + "</span><button class=\"btn danger small\" type=\"button\" data-act=\"del-yes\" data-id=\"" + id + "\">" + esc(t("del")) + "</button><button class=\"btn small\" type=\"button\" data-act=\"del-no\" data-id=\"" + id + "\">" + esc(t("cancel")) + "</button>"
+      : (c >= 0 ? "<button class=\"btn ghost small\" type=\"button\" data-act=\"ics\" data-id=\"" + id + "\">" + esc(t("ics")) + "</button>" : "") +
+        "<button class=\"btn ghost small\" type=\"button\" data-act=\"del\" data-id=\"" + id + "\">" + esc(t("del")) + "</button>";
+    var doneCount = b.done.filter(Boolean).length;
+    var pill = c < 0 ? "<span class=\"pill done\">" + esc(t("pillDone")) + "</span>"
+      : dueNow ? "<span class=\"pill due\">" + esc(t("pillDue")) + "</span>"
+      : "<span class=\"pill\">" + esc(t("pillWait", {n:c+1})) + "</span>";
+    return "<article class=\"batch" + (dueNow ? " is-due" : "") + "\">" +
+      "<div class=\"batch-top\"><div><h3>" + esc(b.name) + "</h3><div class=\"meta\">" + esc(t("studiedAt", {t: fmtAbs(b.start), d: doneCount})) + "</div></div>" + pill + "</div>" +
+      nodesHtml(b, now) + next + words + "<div class=\"batch-actions\">" + actions + "</div></article>";
+  }
+  function render(){
+    var now = Date.now();
+    var active = state.batches.filter(function(b){ return curStage(b) >= 0; }).sort(function(a, b){ return dueAt(a, curStage(a)) - dueAt(b, curStage(b)); });
+    var finished = state.batches.filter(function(b){ return curStage(b) < 0; }).sort(function(a, b){ return b.start - a.start; });
+    var h = "<div class=\"list-head\"><h2>" + esc(t("listHead")) + "</h2><span>" + esc(t("countActive", {n:active.length}) + (finished.length ? t("countDone", {n:finished.length}) : "")) + "</span></div>";
+    h += active.length ? active.map(function(b){ return batchHtml(b, now); }).join("")
+      : "<div class=\"empty\"><strong>" + esc(t("emptyTitle")) + "</strong>" + esc(t("emptyBody")) + "</div>";
+    if (finished.length) h += "<details class=\"finished\"><summary>" + esc(t("finished", {n:finished.length})) + "</summary><div class=\"list\">" + finished.map(function(b){ return batchHtml(b, now); }).join("") + "</div></details>";
+    var fin = document.querySelector("details.finished"), openFinished = fin && fin.open;
+    var openWords = {}; [].forEach.call(document.querySelectorAll("#main details.words[open]"), function(d){ openWords[d.getAttribute("data-wid")] = 1; });
+    $("main").innerHTML = h;
+    if (openFinished) document.querySelector("details.finished").open = true;
+    [].forEach.call(document.querySelectorAll("#main details.words"), function(d){ if (openWords[d.getAttribute("data-wid")]) d.open = true; });
+
+    var due = dueList(now), bar = $("duebar");
+    if (due.length){
+      bar.hidden = false;
+      bar.innerHTML = "<span>" + t("dueBar", {n:due.length, names: due.map(function(b){ return esc(b.name); }).join(L().sep)}) + "</span><button class=\"btn due small\" type=\"button\" data-act=\"open\">" + esc(t("openReminder")) + "</button>";
+    } else bar.hidden = true;
+  }
+
+  /* ================= modal ================= */
+  var modalSig = "";
+  function closeModal(){ $("overlay").hidden = true; modalSig = ""; }
+  function openModal(force){
+    var now = Date.now(), list = dueList(now);
+    if (!list.length){ closeModal(); return; }
+    var sig = list.map(function(b){ return b.id + ":" + curStage(b); }).join("|");
+    if (sig === modalSig && !$("overlay").hidden && !force) return;
+    modalSig = sig;
+    $("mTitle").textContent = list.length > 1 ? t("titleMany", {n:list.length}) : t("titleOne", {name:list[0].name});
+    $("mBody").innerHTML = list.map(function(b){
+      var i = curStage(b);
+      var words = b.words ? "<details class=\"words\" open><summary>" + esc(t("mWords")) + "</summary><p>" + esc(b.words) + "</p></details>" : "";
+      return "<div class=\"mitem\"><div class=\"mitem-top\"><div><h3>" + esc(b.name) + "</h3><div class=\"meta\">" +
+        esc(t("mMeta", {n:i+1, label:L().stages[i], t:fmtAbs(dueAt(b, i))})) + "</div></div>" +
+        "<button class=\"btn primary small\" type=\"button\" data-act=\"done\" data-id=\"" + esc(b.id) + "\">" + esc(t("reviewed")) + "</button></div>" + words + "</div>";
+    }).join("");
+    $("overlay").hidden = false;
+  }
+
+  /* ================= clock ================= */
+  function check(){
+    var now = Date.now(), list = dueList(now);
+    list.forEach(function(b){
+      var i = curStage(b), key = b.id + ":" + i + ":" + (b.snooze || 0);
+      if (!notified[key]){ notified[key] = 1; sysNotify(b, i); }
+    });
+    if (list.length) openModal(false); else closeModal();
+    render();
+  }
+  var flash = false;
+  setInterval(function(){
+    var n = dueList(Date.now()).length;
+    flash = n ? !flash : false;
+    document.title = n && flash ? t("flash", {n:n}) : L().docTitle;
+  }, 1500);
+  setInterval(check, 10e3);
+  setInterval(function(){ if (!startTouched){ $("bStart").value = toLocalInput(Date.now()); renderPreview(); } }, 30e3);
+  document.addEventListener("visibilitychange", function(){ if (!document.hidden) check(); });
+
+  applyStatic(); check();
+})();
+</script>
+</body>
+</html>
