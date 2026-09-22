@@ -6,7 +6,7 @@
 
 **在线使用 → https://ll-code663.github.io/ebbinghaus-review-clock/**
 
-![截图](docs/screenshot-zh.png)
+![截图](screenshot-zh.png)
 
 ## 复习节点
 
